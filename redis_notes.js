@@ -100,19 +100,8 @@ query.exec = function() {
 - set(key, value)
 - get(key, (err,val)=>{}) - async so we have a callback
 Redis store values similar to JS objects
-*/
 
-// Setting an AUTOMATIC EXPIRATION
-// > client.set('color', 'red')
-// true
-// > client.get('color', console.log)
-// true
-// > null 'red'
 
-// // SETTING EXPIRATION - 4th param === # of seconds
-// client.set('color', 'red', 'EX', 5)
-
-/*
 ---getting started
 - open up node REPL (Read-Eval-Print Loop):  >node (enter)
     -A Read–Eval–Print Loop (REPL), also known as an interactive toplevel or language shell, is a simple, interactive computer programming environment that takes single user inputs (i.e. single expressions), evaluates them, and returns the result to the user; a program written in a REPL environment is executed piecewise.
@@ -162,5 +151,16 @@ true
 
 // CLEAR THE CACHE!
 > client.flushall();
+
+
+// Setting an AUTOMATIC EXPIRATION
+// > client.set('color', 'red')
+// true
+// > client.get('color', console.log)
+// true
+// > null 'red'
+
+// // SETTING EXPIRATION - 4th param === # of seconds
+// client.set('color', 'red', 'EX', 5)
 
 */
