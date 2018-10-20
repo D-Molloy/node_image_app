@@ -77,5 +77,12 @@ Redis store values similar to JS objects
 > client.get('colors', console.log)
 true
 > null '{"red":"rojo"}'
+//note this val is still in json format, need to json.parse
+> client.get('colors', (err, val)=> console.log(JSON.parse(val))
+> { red: 'rojo' }
+
+
+// CLEAR THE CACHE!
+> client.flushall();
 
 */
