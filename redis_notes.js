@@ -11,7 +11,74 @@
 - !!! if we ask to query for a property that's not indexed (like title), it has to scan the entire document aka a FULL COLLECTION SCAN....HUGE performance hit/very expensive
 - Adding multiple indexes to a collection impacts the ability to write to the collection performantly i.e. for every index we add, it takes longer to write to the collection
 
-=====  Caching Layer
+
+===== Mongoose notes
+- example custom query
+*/
+Person
+  // make the query and add conditions('where')
+  .find({ occupation: /host/ })
+  .where("name.last")
+  .equals("Ghost")
+  .where("age")
+  .gt(17)
+  .lt(66)
+  .where("likes")
+  .in(["vaporizing", "talking"])
+  //limit the number of responses
+  .limit(10)
+  .sort("-occupation")
+  //select particular fields
+  .select("name occupation")
+  //  EXECUTE THE QUERY
+  .exec(callback);
+/*
+**  Whenever we reference a collection and use find/where/limit/sort/etc, a `QUERY OBJECT` is created
+    - each time we refine the search, a new object is created, so we can save it to a variable if we want
+    -This represent a query that will be sent of to Mongo in the future:
+*/
+const query = Person.find({ occupation: /host/ })
+  .where("name.last")
+  .equals("Ghost")
+  .where("age")
+  .gt(17)
+  .lt(66)
+  .where("likes")
+  .in(["vaporizing", "talking"])
+  .limit(10)
+  .sort("-occupation")
+  .select("name occupation");
+// check to see if this query is already in redis
+
+query.getOptions(); // returns all of the options used when creating the query
+//   WOULD MAKE A PERFECT KEY!  (just need to stringify)
+
+// 3 way to trigger queries in Mongo
+// 1
+query.exec((err, result) => console.log(result));
+// same as...
+// 2 - .then calls exec behind the scenes
+query.then(result => console.log(result));
+// same as...
+// 3 - async/await !!! this is how we are going to execute our queries
+const result = await query;
+
+// !!!!!!
+//  We are going to override the built-in exec method
+query.exec = function() {
+  //check to see if the query has already been executed
+  // and if it has, return the result right away
+  const result = client.get("query key");
+  if (result) return result;
+  //otherwise execute the query *as normal*
+  const result2 = runTheOriginalExecFunction();
+  //then save the value in redis
+  client.set("query key", result2);
+
+  return result;
+};
+
+/*=====  Caching Layer
 -  the Cache Layer/Server exists between mongoose and mongoDB
 1-  anytime mongoose issues a query it first goes to the Cache Server
 2-  The Cache Server checks to see if that exact query has every been run before
@@ -33,8 +100,19 @@
 - set(key, value)
 - get(key, (err,val)=>{}) - async so we have a callback
 Redis store values similar to JS objects
+*/
 
+// Setting an AUTOMATIC EXPIRATION
+// > client.set('color', 'red')
+// true
+// > client.get('color', console.log)
+// true
+// > null 'red'
 
+// // SETTING EXPIRATION - 4th param === # of seconds
+// client.set('color', 'red', 'EX', 5)
+
+/*
 ---getting started
 - open up node REPL (Read-Eval-Print Loop):  >node (enter)
     -A Read–Eval–Print Loop (REPL), also known as an interactive toplevel or language shell, is a simple, interactive computer programming environment that takes single user inputs (i.e. single expressions), evaluates them, and returns the result to the user; a program written in a REPL environment is executed piecewise.
